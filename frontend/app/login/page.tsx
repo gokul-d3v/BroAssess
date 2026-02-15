@@ -74,7 +74,7 @@ function LoginContent() {
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.2 }}
                     >
-                        <h2 className="text-4xl font-bold mb-6">Welcome Back to BroAssess</h2>
+                        <h2 className="text-4xl font-bold mb-6">Welcome Back to HireIt</h2>
                         <p className="text-indigo-100 text-lg leading-relaxed">
                             The professional platform for conducting seamless technical interviews and secure assessments.
                         </p>

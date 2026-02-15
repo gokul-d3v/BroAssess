@@ -1,7 +1,7 @@
 package routes
 
 import (
-	"broassess-backend/controllers"
+	"hireit-backend/controllers"
 
 	"github.com/gin-gonic/gin"
 )

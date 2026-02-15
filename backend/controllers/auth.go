@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"broassess-backend/models"
+	"hireit-backend/models"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"

@@ -12,10 +12,10 @@ export default function PublicLayout({
                 <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
                     <Link href="/" className="flex items-center gap-2">
                         <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold text-lg">
-                            B
+                            H
                         </div>
                         <span className="text-xl font-bold bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">
-                            BroAssess
+                            HireIt
                         </span>
                     </Link>
                 </div>

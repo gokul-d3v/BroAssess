@@ -1,7 +1,7 @@
 package routes
 
 import (
-	"broassess-backend/controllers"
+	"hireit-backend/controllers"
 
 	"github.com/gin-gonic/gin"
 )
@@ -12,6 +12,7 @@ func CandidateRoutes(r *gin.RouterGroup) {
 	r.GET("/assessments/:id", controllers.GetAssessmentByID)
 
 	r.POST("/assessments/:id/submit", controllers.SubmitAssessment)
+	r.POST("/assessments/:id/progress", controllers.SaveAssessmentProgress) // New route for saving progress
 	r.GET("/assessments/:id/result", controllers.GetCandidateResult)
 	r.GET("/submissions/me", controllers.GetMySubmissions)
 

@@ -2,10 +2,10 @@ package main
 
 // Trigger rebuild to load new env
 import (
-	"broassess-backend/controllers"
-	"broassess-backend/routes"
 	"context"
 	"fmt"
+	"hireit-backend/controllers"
+	"hireit-backend/routes"
 	"log"
 	"net/http"
 	"os"

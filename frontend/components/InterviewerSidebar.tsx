@@ -9,7 +9,7 @@ export default function InterviewerSidebar() {
     return (
         <aside className="w-64 bg-indigo-900 text-white hidden md:block relative flex-shrink-0">
             <div className="p-6">
-                <h1 className="text-2xl font-bold">BroAssess</h1>
+                <h1 className="text-2xl font-bold">HireIt</h1>
                 <span className="text-xs text-indigo-300 uppercase tracking-wider">Interviewer</span>
             </div>
             <nav className="mt-6 px-4 space-y-2">

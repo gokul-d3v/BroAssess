@@ -1,7 +1,7 @@
 package routes
 
 import (
-	"broassess-backend/middleware"
+	"hireit-backend/middleware"
 
 	"github.com/gin-gonic/gin"
 )

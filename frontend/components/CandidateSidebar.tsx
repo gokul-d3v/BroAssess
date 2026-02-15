@@ -9,7 +9,7 @@ export default function CandidateSidebar() {
     return (
         <aside className="w-64 bg-white border-r border-gray-200 hidden md:block relative flex-shrink-0">
             <div className="p-6">
-                <h1 className="text-2xl font-bold text-indigo-600">BroAssess</h1>
+                <h1 className="text-2xl font-bold text-indigo-600">HireIt</h1>
             </div>
             <nav className="mt-6 px-4 space-y-2">
                 <button

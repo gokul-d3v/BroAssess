@@ -165,7 +165,7 @@ export default function SubmissionsPage() {
                         </div>
 
                         <div className="flex-1 overflow-y-auto p-6 space-y-6">
-                            {assessment.questions.map((q: any, idx: number) => {
+                            {assessment?.questions?.map((q: any, idx: number) => {
                                 const answer = selectedSubmission.answers?.find((a: any) => a.question_id === q.id);
                                 const isCorrect = answer?.is_correct;
                                 const isMCQ = q.type === "MCQ";

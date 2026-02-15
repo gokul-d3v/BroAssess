@@ -55,33 +55,76 @@ export default function AssessmentPlayer({ assessmentId, onComplete }: Assessmen
     const fetchAssessment = async (id: string) => {
         try {
             // We assume the token is already in localStorage (managed by parent or login)
-            const [assessmentData, submissionsData] = await Promise.all([
+            const [responseData, submissionsData] = await Promise.all([
                 apiRequest(`/api/assessments/${id}`, "GET"),
                 apiRequest("/api/submissions/me", "GET")
             ]);
 
-            // Check if already submitted
-            const existingSubmission = submissionsData?.find((s: any) => s.assessment_id === id);
+            // Handle new response structure { assessment, saved_answers }
+            // or fallback to old structure if API hasn't deployed fully or something
+            const assessmentData = responseData.assessment || responseData;
+            const savedAnswers = responseData.saved_answers || {};
+
+            // Check if already submitted (completed)
+            const existingSubmission = submissionsData?.find((s: any) => s.assessment_id === id && s.status !== "in_progress");
             if (existingSubmission) {
                 showToast("You have already submitted this assessment.", "info");
                 if (onComplete) {
                     onComplete();
                 } else {
-                    // Fallback redirect if no callback provided
                     router.replace(`/candidate/assessments/${id}/result`);
                 }
                 return;
             }
 
             setAssessment(assessmentData);
+            setAnswers(savedAnswers); // Restore saved answers
+
             // Initialize timer (duration in minutes * 60)
+            // Ideally we should adjust time based on started_at if resuming
             setTimeLeft(assessmentData.duration * 60);
-        } catch (err) {
+
+        } catch (err: any) {
             console.error("Failed to fetch assessment", err);
-            showToast("Failed to load assessment. Please try again.", "error");
-            // router.push("/candidate/assessments"); // Don't redirect globally, let parent handle or show error
+            // Handle access denied (e.g. Phase protection)
+            if (err.status === 403 || err.message?.includes("pass the previous phase")) {
+                showToast(err.message || "Access denied.", "error");
+                router.push("/candidate/dashboard"); // Or wherever appropriate
+            } else {
+                showToast("Failed to load assessment. Please try again.", "error");
+            }
         } finally {
             setLoading(false);
+        }
+    };
+
+    // Auto-save logic
+    useEffect(() => {
+        if (!assessment || Object.keys(answers).length === 0) return;
+
+        const timer = setTimeout(() => {
+            saveProgress();
+        }, 2000); // Auto-save every 2s after last change
+
+        return () => clearTimeout(timer);
+    }, [answers, assessment]);
+
+    const saveProgress = async () => {
+        if (!assessment) return;
+        try {
+            const formattedAnswers = assessment.questions.map(q => ({
+                question_id: q.id,
+                value: answers[q.id] || ""
+            })).filter(a => a.value !== ""); // Only save what we have
+
+            if (formattedAnswers.length === 0) return;
+
+            await apiRequest(`/api/assessments/${assessment.id}/progress`, "POST", {
+                answers: formattedAnswers
+            });
+            // Quietly save, no toast needed for background save
+        } catch (err) {
+            console.error("Failed to auto-save progress", err);
         }
     };
 

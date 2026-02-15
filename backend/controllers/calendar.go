@@ -6,7 +6,7 @@ import (
 	"os"
 	"time"
 
-	"broassess-backend/utils"
+	"hireit-backend/utils"
 
 	"github.com/gin-gonic/gin"
 	"golang.org/x/oauth2"

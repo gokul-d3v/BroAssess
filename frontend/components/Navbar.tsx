@@ -15,7 +15,7 @@ export default function Navbar() {
                     <div className="flex-shrink-0 flex items-center gap-2">
                         <ShieldCheck className="w-8 h-8 text-indigo-600" />
                         <span className="font-bold text-xl text-gray-900 tracking-tight">
-                            BroAssess
+                            HireIt
                         </span>
                     </div>
 

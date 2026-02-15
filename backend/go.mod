@@ -1,4 +1,4 @@
-module broassess-backend
+module hireit-backend
 
 go 1.25.5
 

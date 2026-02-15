@@ -1,8 +1,8 @@
 package controllers
 
 import (
-	"broassess-backend/models"
 	"context"
+	"hireit-backend/models"
 	"net/http"
 	"time"
 

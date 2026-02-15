@@ -81,6 +81,24 @@ export default function InterviewerAssessmentsPage() {
         showToast("Assessment link copied to clipboard!", "success");
     };
 
+    const getPhases = (p1: Assessment) => {
+        const p2Id = p1.next_phase_id;
+        const p2 = assessments.find(a => a.id === p2Id);
+        const p3Id = p2?.next_phase_id;
+        const p3 = assessments.find(a => a.id === p3Id);
+
+        console.log("Linking Debug:", {
+            p1Id: p1.id,
+            p1Next: p1.next_phase_id,
+            p2Found: !!p2,
+            p2Id: p2?.id,
+            p2Next: p2?.next_phase_id,
+            p3Found: !!p3
+        });
+
+        return { p1, p2, p3 };
+    };
+
     const filteredAssessments = (assessments || [])
         .filter(a => a.phase === 1 || !a.phase) // Show only Phase 1 or legacy assessments
         .filter(a =>
@@ -138,57 +156,84 @@ export default function InterviewerAssessmentsPage() {
                                         </td>
                                     </tr>
                                 ) : (
-                                    filteredAssessments.map((assessment) => (
-                                        <tr key={assessment.id} className="hover:bg-gray-50 transition">
-                                            <td className="p-4 font-medium text-gray-900">
-                                                {assessment.title}
-                                                {assessment.next_phase_id && (
-                                                    <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800">
-                                                        Multi-Phase
-                                                    </span>
-                                                )}
-                                            </td>
-                                            <td className="p-4 text-gray-600">{assessment.questions?.length || 0} questions</td>
-                                            <td className="p-4 text-gray-600 flex items-center gap-1">
-                                                <Clock size={16} /> {assessment.duration} mins
-                                            </td>
-                                            <td className="p-4 text-gray-600">
-                                                {new Date(assessment.created_at).toLocaleDateString()}
-                                            </td>
-                                            <td className="p-4 text-right">
-                                                <div className="flex justify-end gap-2">
-                                                    <button
-                                                        onClick={() => handleShare(assessment.id)}
-                                                        className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg tooltip"
-                                                        title="Share Public Link"
-                                                    >
-                                                        <Share2 size={18} />
-                                                    </button>
-                                                    <button
-                                                        onClick={() => router.push(`/interviewer/assessments/${assessment.id}/submissions`)}
-                                                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg tooltip"
-                                                        title="View Submissions"
-                                                    >
-                                                        <Users size={18} />
-                                                    </button>
-                                                    <button
-                                                        onClick={() => router.push(`/interviewer/assessments/${assessment.id}/edit`)}
-                                                        className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg"
-                                                        title="Edit"
-                                                    >
-                                                        <Edit size={18} />
-                                                    </button>
-                                                    <button
-                                                        onClick={() => confirmDelete(assessment.id)}
-                                                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
-                                                        title="Delete"
-                                                    >
-                                                        <Trash2 size={18} />
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    ))
+                                    filteredAssessments.map((assessment) => {
+                                        const { p2, p3 } = getPhases(assessment);
+                                        return (
+                                            <tr key={assessment.id} className="hover:bg-gray-50 transition">
+                                                <td className="p-4 font-medium text-gray-900">
+                                                    {assessment.title}
+                                                    {assessment.next_phase_id && (
+                                                        <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800">
+                                                            Multi-Phase
+                                                        </span>
+                                                    )}
+                                                </td>
+                                                <td className="p-4 text-gray-600">{assessment.questions?.length || 0} questions</td>
+                                                <td className="p-4 text-gray-600 flex items-center gap-1">
+                                                    <Clock size={16} /> {assessment.duration} mins
+                                                </td>
+                                                <td className="p-4 text-gray-600">
+                                                    {new Date(assessment.created_at).toLocaleDateString()}
+                                                </td>
+                                                <td className="p-4 text-right">
+                                                    <div className="flex justify-end gap-2 items-center">
+                                                        {/* Edit Buttons for Phases */}
+                                                        <div className="flex bg-gray-100 rounded-lg p-1 mr-2">
+                                                            <button
+                                                                onClick={() => router.push(`/interviewer/assessments/${assessment.id}/edit`)}
+                                                                className="px-2 py-1 text-xs font-medium text-gray-700 hover:bg-white hover:shadow-sm rounded transition"
+                                                                title="Edit Phase 1"
+                                                            >
+                                                                P1
+                                                            </button>
+                                                            {p2 && (
+                                                                <button
+                                                                    onClick={() => router.push(`/interviewer/assessments/${p2.id}/edit`)}
+                                                                    className="px-2 py-1 text-xs font-medium text-gray-700 hover:bg-white hover:shadow-sm rounded transition"
+                                                                    title="Edit Phase 2"
+                                                                >
+                                                                    P2
+                                                                </button>
+                                                            )}
+                                                            {p3 && (
+                                                                <button
+                                                                    onClick={() => router.push(`/interviewer/assessments/${p3.id}/edit`)}
+                                                                    className="px-2 py-1 text-xs font-medium text-gray-700 hover:bg-white hover:shadow-sm rounded transition"
+                                                                    title="Edit Phase 3"
+                                                                >
+                                                                    P3
+                                                                </button>
+                                                            )}
+                                                        </div>
+
+                                                        <button
+                                                            onClick={() => handleShare(assessment.id)}
+                                                            className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg tooltip"
+                                                            title="Share Public Link"
+                                                        >
+                                                            <Share2 size={18} />
+                                                        </button>
+                                                        <button
+                                                            onClick={() => router.push(`/interviewer/assessments/${assessment.id}/submissions`)}
+                                                            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg tooltip"
+                                                            title="View Submissions"
+                                                        >
+                                                            <Users size={18} />
+                                                        </button>
+
+                                                        {/* Phase 1 Delete only? Or delete all? Logic handles cascade delete */}
+                                                        <button
+                                                            onClick={() => confirmDelete(assessment.id)}
+                                                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
+                                                            title="Delete Chain"
+                                                        >
+                                                            <Trash2 size={18} />
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })
                                 )}
                             </tbody>
                         </table>

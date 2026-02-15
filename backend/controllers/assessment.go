@@ -6,8 +6,8 @@ import (
 	"strconv"
 	"time"
 
-	"broassess-backend/models"
-	"broassess-backend/utils"
+	"hireit-backend/models"
+	"hireit-backend/utils"
 
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
@@ -283,6 +283,7 @@ func GetAssessmentByID(c *gin.Context) {
 
 	// Get user role
 	role, _ := c.Get("role")
+	userID, _ := c.Get("userID")
 
 	// For candidates: randomize MCQ options and remove correct answers
 	if role == "candidate" {
@@ -305,7 +306,134 @@ func GetAssessmentByID(c *gin.Context) {
 		}
 	}
 
-	c.JSON(http.StatusOK, assessment)
+	// Check if user has already passed this assessment
+	var existingSubmission models.Submission
+	err = SubmissionCollection.FindOne(ctx, bson.M{"assessment_id": objID, "candidate_id": userID, "passed": true}).Decode(&existingSubmission)
+	if err == nil {
+		// User already passed, maybe we should let them retake or show result?
+		// For now, let's just proceed, but you might want to restrict this.
+	}
+
+	// Phase Protection: Check if this is Phase 2 or 3 and if user passed previous phase
+	if assessment.Phase > 1 {
+		// Find previous phase assessment
+		// We need to find an assessment that has NextPhaseID == this assessment.ID
+		// This is a bit reverse lookup, ideally assessment should have PreviousPhaseID or we check by Phase number in same series
+		// Assuming localized series logic isn't fully linked, let's try to find if there is a submission for a Phase < currentPhase
+		// A better way: if we know the previous phase ID.
+		// Since we don't have PreviousPhaseID, we can query for an assessment where NextPhaseID is this ID.
+		var prevAssessment models.Assessment
+		err = AssessmentCollection.FindOne(ctx, bson.M{"next_phase_id": objID}).Decode(&prevAssessment)
+		if err == nil {
+			// Found previous phase, check if user passed it
+			var prevSubmission models.Submission
+			err = SubmissionCollection.FindOne(ctx, bson.M{"assessment_id": prevAssessment.ID, "candidate_id": userID, "passed": true}).Decode(&prevSubmission)
+			if err != nil {
+				c.JSON(http.StatusForbidden, gin.H{"error": "You must pass the previous phase to access this assessment."})
+				return
+			}
+		}
+	}
+
+	// Resume Logic: Check for in-progress submission
+	var inProgressSubmission models.Submission
+	err = SubmissionCollection.FindOne(ctx, bson.M{
+		"assessment_id": objID,
+		"candidate_id":  userID,
+		"status":        "in_progress",
+	}).Decode(&inProgressSubmission)
+
+	savedAnswers := make(map[string]string)
+	if err == nil {
+		for _, ans := range inProgressSubmission.Answers {
+			savedAnswers[ans.QuestionID.Hex()] = ans.Value
+		}
+	}
+
+	// For candidates: randomize MCQ options and remove correct answers
+	if role == "candidate" {
+		for i := range assessment.Questions {
+			if assessment.Questions[i].Type == models.MultipleChoice && len(assessment.Questions[i].Options) > 0 {
+				// Check if we have shuffled options stored in submission
+				if len(inProgressSubmission.ShuffledOptions) > 0 {
+					if opts, ok := inProgressSubmission.ShuffledOptions[assessment.Questions[i].ID.Hex()]; ok {
+						assessment.Questions[i].Options = opts
+					}
+				} else {
+					// Shuffle options using Fisher-Yates algorithm
+					options := make([]string, len(assessment.Questions[i].Options))
+					copy(options, assessment.Questions[i].Options)
+
+					// Shuffle
+					for j := len(options) - 1; j > 0; j-- {
+						k := int(time.Now().UnixNano() % int64(j+1))
+						options[j], options[k] = options[k], options[j]
+					}
+					assessment.Questions[i].Options = options
+				}
+			}
+			// Remove correct answer from response for candidates
+			assessment.Questions[i].CorrectAnswer = ""
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"assessment":    assessment,
+		"saved_answers": savedAnswers,
+	})
+}
+
+func SaveAssessmentProgress(c *gin.Context) {
+	assessmentID := c.Param("id")
+	objID, err := primitive.ObjectIDFromHex(assessmentID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Assessment ID"})
+		return
+	}
+
+	var input struct {
+		Answers []models.Answer `json:"answers"`
+	}
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	userID, _ := c.Get("userID")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	// Update or upsert submission with status "in_progress"
+	filter := bson.M{
+		"assessment_id": objID,
+		"candidate_id":  userID,
+		"status":        "in_progress", // Only update in-progress ones
+	}
+
+	update := bson.M{
+		"$set": bson.M{
+			"answers":    input.Answers,
+			"updated_at": time.Now(),
+		},
+		"$setOnInsert": bson.M{
+			"_id":           primitive.NewObjectID(),
+			"started_at":    time.Now(),
+			"status":        "in_progress",
+			"assessment_id": objID,
+			"candidate_id":  userID,
+		},
+	}
+
+	opts := options.Update().SetUpsert(true)
+	_, err = SubmissionCollection.UpdateOne(ctx, filter, update, opts)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save progress"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Progress saved"})
 }
 
 func SubmitAssessment(c *gin.Context) {
@@ -504,7 +632,34 @@ func GetCandidateResult(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, submission)
+	// Fetch assessment to get TotalMarks and NextPhaseID
+	var assessment models.Assessment
+	err = AssessmentCollection.FindOne(ctx, bson.M{"_id": objID}).Decode(&assessment)
+	if err != nil {
+		// If assessment is deleted, we can still return submission but without extra info
+		// But ideally we want to know the total marks.
+		// For now, let's just return the submission if assessment not found (edge case)
+		c.JSON(http.StatusOK, submission)
+		return
+	}
+
+	// Create a response combining submission and assessment details
+	response := gin.H{
+		"id":                  submission.ID,
+		"assessment_id":       submission.AssessmentID,
+		"candidate_id":        submission.CandidateID,
+		"answers":             submission.Answers,
+		"score":               submission.Score,
+		"status":              submission.Status,
+		"started_at":          submission.StartedAt,
+		"submitted_at":        submission.SubmittedAt,
+		"passed":              submission.Passed,
+		"next_phase_unlocked": submission.NextPhaseUnlocked,
+		"total_marks":         assessment.TotalMarks,
+		"next_phase_id":       assessment.NextPhaseID,
+	}
+
+	c.JSON(http.StatusOK, response)
 }
 
 func GetMySubmissions(c *gin.Context) {
