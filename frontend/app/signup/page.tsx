@@ -6,7 +6,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { User, Briefcase, ChevronLeft, Lock, Mail, ArrowRight, UserPlus, AlertCircle, Eye, EyeOff } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { apiRequest } from "@/lib/api";
+import { apiRequest, API_URL } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 
@@ -284,7 +284,7 @@ export default function SignupPage() {
 
             <div className="mt-6 flex justify-center">
               <a
-                href={`http://localhost:8080/auth/google/login?role=${role}`}
+                href={`${API_URL}/auth/google/login?role=${role}`}
                 className="w-full inline-flex justify-center py-3 px-4 border border-gray-200 rounded-xl shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 transition-colors"
               >
                 <svg className="h-5 w-5 mr-2" viewBox="0 0 24 24">
