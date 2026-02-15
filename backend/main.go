@@ -109,11 +109,6 @@ func main() {
 		})
 	})
 
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
-	}
-
 	// Create HTTP server with timeouts to prevent slow client attacks
 	srv := &http.Server{
 		Addr:         ":" + port,
