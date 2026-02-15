@@ -6,7 +6,7 @@ export default function InterviewerLayout({
     children: React.ReactNode;
 }) {
     return (
-        <div className="flex min-h-screen bg-gray-50">
+        <div className="flex flex-col md:flex-row min-h-screen bg-gray-50">
             <InterviewerSidebar />
             <div className="flex-1">
                 {children}

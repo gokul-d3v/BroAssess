@@ -6,7 +6,7 @@ export default function CandidateLayout({
     children: React.ReactNode;
 }) {
     return (
-        <div className="flex min-h-screen bg-gray-50">
+        <div className="flex flex-col md:flex-row min-h-screen bg-gray-50">
             <CandidateSidebar />
             <div className="flex-1">
                 {children}
