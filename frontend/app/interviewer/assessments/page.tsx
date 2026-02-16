@@ -87,15 +87,6 @@ export default function InterviewerAssessmentsPage() {
         const p3Id = p2?.next_phase_id;
         const p3 = assessments.find(a => a.id === p3Id);
 
-        console.log("Linking Debug:", {
-            p1Id: p1.id,
-            p1Next: p1.next_phase_id,
-            p2Found: !!p2,
-            p2Id: p2?.id,
-            p2Next: p2?.next_phase_id,
-            p3Found: !!p3
-        });
-
         return { p1, p2, p3 };
     };
 

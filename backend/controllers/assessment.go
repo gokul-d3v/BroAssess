@@ -321,8 +321,8 @@ func GetAssessmentByID(c *gin.Context) {
 		// For now, let's just proceed, but you might want to restrict this.
 	}
 
-	// Phase Protection: Check if this is Phase 2 or 3 and if user passed previous phase
-	if assessment.Phase > 1 {
+	// Phase Protection: Check if this is Phase 2 or 3 and if user passed previous phase (Only for candidates)
+	if role == "candidate" && assessment.Phase > 1 {
 		// Find previous phase assessment
 		// We need to find an assessment that has NextPhaseID == this assessment.ID
 		// This is a bit reverse lookup, ideally assessment should have PreviousPhaseID or we check by Phase number in same series
